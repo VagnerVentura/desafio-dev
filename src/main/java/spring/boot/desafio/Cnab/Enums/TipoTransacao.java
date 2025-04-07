@@ -1,5 +1,10 @@
 package spring.boot.desafio.Cnab.Enums;
 
+import jakarta.persistence.Table;
+import lombok.Getter;
+
+@Table
+@Getter
 public enum TipoTransacao {
 	
 	DEBITO(1, "Débito", "Entrada", "+"),
@@ -22,6 +27,15 @@ public enum TipoTransacao {
 		this.descricao = descricao;
 		this.natureza = natureza;
 		this.sinal = sinal;
+	}
+	
+	public static TipoTransacao fromCodigo(int codigo) {
+		for(TipoTransacao tipo: TipoTransacao.values()) {
+			if (tipo.codigo == codigo) {
+				return tipo;
+			}
+		}
+		throw new IllegalArgumentException("Tipo de Transação Inválida: " + codigo);
 	}
 	
 }
