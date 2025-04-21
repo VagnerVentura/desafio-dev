@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Importar Arquivo CNAB</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #28a745, #218838);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: #fff;
+      color: #333;
+      padding: 2rem 3rem;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      color: #28a745;
+    }
+
+    input[type="file"] {
+      margin: 1rem 0;
+      padding: 0.5rem;
+      border: 2px solid #28a745;
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    button {
+      background-color: #28a745;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+
+    .success, .error {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Importar Arquivo CNAB</h1>
+    <form id="uploadForm" enctype="multipart/form-data" method="POST" action="/upload">
+      <input type="file" name="file" accept=".txt" required />
+      <button type="submit">Enviar Arquivo</button>
+    </form>
+    <div class="success" id="successMessage">Upload realizado com sucesso!</div>
+    <div class="error" id="errorMessage">Erro ao enviar o arquivo.</div>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const success = document.getElementById('successMessage');
+    const error = document.getElementById('errorMessage');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      success.style.display = 'none';
+      error.style.display = 'none';
+
+      const formData = new FormData(form);
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        success.style.display = 'block';
+      } else {
+        error.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>
