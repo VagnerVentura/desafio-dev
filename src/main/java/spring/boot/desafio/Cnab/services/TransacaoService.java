@@ -6,22 +6,26 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import lombok.AllArgsConstructor;
 import spring.boot.desafio.Cnab.Transacao;
 import spring.boot.desafio.Cnab.Enums.TipoTransacao;
+import spring.boot.desafio.Cnab.Repositories.LojaRepository;
 import spring.boot.desafio.Cnab.Repositories.TransacaoRepository;
+import spring.boot.desafio.Cnab.models.Loja;
 
 @Service
 @AllArgsConstructor
 public class TransacaoService {
 
-	TransacaoRepository transacaoRepository;
+	private final TransacaoRepository transacaoRepository;
+	private LojaRepository lojaRepository;
 	
 	public void arquivoProcessar (MultipartFile file) {
 		
@@ -29,7 +33,7 @@ public class TransacaoService {
 			String linha;
 			while ((linha = br.readLine()) != null) {
 				Transacao transacao = parseLinha(linha);
-				transacaoRepository.save(transacao);
+				processarTransacao(transacao);
 			}
 		}
 		catch (Exception e) {
@@ -37,6 +41,11 @@ public class TransacaoService {
 		}
 		
 	}
+	
+	public List<Transacao> findAll() {
+		return transacaoRepository.findAll();
+	}
+
 
 	private Transacao parseLinha(String linha) {
 		
@@ -52,15 +61,45 @@ public class TransacaoService {
 		transacao.setCpf(linha.substring(19,30));
 		transacao.setCartao(linha.substring(30,42));
 		transacao.setHora(LocalTime.parse(linha.substring(42,48),DateTimeFormatter.ofPattern("HHmmss")));
-		transacao.setDonoLoja(linha.substring(48,62));
-		transacao.setNomeLoja(linha.substring(62).trim());
-		return transacao;
 		
-	}
-
-	public List<Transacao> findAll() {
-		return transacaoRepository.findAll();
+		String donoLoja = linha.substring(48,62);
+		String nomeLoja =  linha.substring(62).trim();
+		
+		Loja loja = new Loja();
+		loja.setDono(donoLoja);
+		loja.setNome(nomeLoja);		
+		transacao.setLoja(loja);
+		
+		return transacao;		
 	}
 	
+	private void processarTransacao(Transacao transacao) {
+			Loja lojaTemp = transacao.getLoja();
+			
+			Optional<Loja> lojaExistente = lojaRepository.findByNomeAndDono(
+					lojaTemp.getNome(), lojaTemp.getDono());
+			
+			Loja loja = lojaExistente.orElseGet(()-> {
+				Loja novaLoja = new Loja();
+				novaLoja.setNome(lojaTemp.getNome());
+				novaLoja.setDono(lojaTemp.getDono());
+				novaLoja.setSaldo(BigDecimal.ZERO);
+				return lojaRepository.save(novaLoja);
+			});
+			
+			BigDecimal valor = transacao.getValor();
+			
+			if("Saída".equals(transacao.getNatureza())) {
+				loja.setSaldo(loja.getSaldo().subtract(valor));
+			} else {
+				loja.setSaldo(loja.getSaldo().add(valor));
+			}
+		
+			transacao.setLoja(loja);
+			lojaRepository.save(loja);
+			transacaoRepository.save(transacao);			
+	}
+
+
 	
 }
